@@ -13,3 +13,16 @@ __pycache__/
 /checkpoints/
 /runs/
 /wandb/
+
+
+# Package build artifacts
+*.egg-info/
+/build/
+/dist/
+
+# Developer tool caches
+.ruff_cache/
+
+# Vim temporary files
+*.swp
+*.swo
