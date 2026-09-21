@@ -14,13 +14,14 @@ are not implemented yet.
 
 | Object    | Selection | Features  |
 | ---       | ---       | ---       |
-| Jets      | Up to seven jets, ordered by decreasing transverse momentum | Mass, transverse momentum, eta, phi |
-| Missing transverse momentum | Event MET | Magnitude, phi |
-| Lepton | Trigger lepton only | Transverse momentum, eta, phi, charge |
-| Jets ranked by b-tag score | Three jets with the highest b-tag scores | B-tag score and corresponding jet charge score |
+| Jets                          | Up to seven jets, ordered by decreasing pT    | Mass, transverse momentum, eta, phi |
+| MET                           | Event MET                                     | Magnitude, phi |
+| Lepton                        | Trigger lepton only                           | Transverse momentum, eta, phi, charge |
+| Jets ranked by b-tag score    | Three jets with the highest PNetb-tag scores  | PNet B-tag score and corresponding UParTPosVsNegjet charge score |
 
-Each jet charge score must remain associated with the same jet as
-its accompanying b-tag score.
+Each jet charge score must remain associated with the same jet as its 
+accompanying b-tag score. The exact branch mapping and preparation rules are 
+described in the [input contract](docs/input-contract.md).
 
 ## Decisions required before implementation
 
