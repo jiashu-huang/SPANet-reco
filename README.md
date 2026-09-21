@@ -21,7 +21,8 @@ are not implemented yet.
 
 Each jet charge score must remain associated with the same jet as its 
 accompanying b-tag score. The exact branch mapping and preparation rules are 
-described in the [input contract](docs/input-contract.md).
+described in the [input contract](docs/input-contract.md). 
+The [target contract](docs/target-contract.md) describes the assignment task.
 
 ## Decisions required before implementation
 

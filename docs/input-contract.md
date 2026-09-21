@@ -56,6 +56,5 @@ a valid assignment target.
 - Additional analysis selections, if any.
 - Model padding values and masks.
 - Handling of invalid tag scores and equal-score ranking ties.
-- Target definitions and treatment of incomplete assignments.
 - Feature transformations and normalization.
 - Event weights, dataset splits, and the training loss.
