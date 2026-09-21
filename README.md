@@ -7,8 +7,8 @@ reconstructing top and antitop decays in signal and background MC samples.
 
 2026-09-21T13:41
 
-Initial repository setup. Data preparation, training, and evaluation
-are not implemented yet.
+Package setup and target validation are implemented. Dataset preparation,
+training, and evaluation are not implemented yet.
 
 ## Proposed model inputs
 
@@ -63,14 +63,17 @@ Expect Python `3.11.x`, an import path pointing to this checkout's
 Run these checks before committing Python changes:
 
 ```bash
-micromamba run -n spanet-reco ruff check src
-micromamba run -n spanet-reco ruff format --check src
+micromamba run -n spanet-reco python -m pytest tests -q
+micromamba run -n spanet-reco ruff check src tests
+micromamba run -n spanet-reco ruff format --check src tests
 ```
+
+The target-validation tests use small NumPy arrays and require no MC files.
 
 To apply formatting:
 
 ```bash
-micromamba run -n spanet-reco ruff format src
+micromamba run -n spanet-reco ruff format src tests
 ```
 
 Review the resulting changes with `git diff` before staging them.
