@@ -1,0 +1,15 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local virtual environment and environment settings
+.venv/
+.env
+
+# Local datasets and generated artifacts
+/data/
+/outputs/
+/checkpoints/
+/runs/
+/wandb/
