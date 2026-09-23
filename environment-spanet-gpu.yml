@@ -1,0 +1,30 @@
+# SPANet training environment for a CUDA GPU node. Versions match the local
+# environment used to develop the configuration (external/SPANet/environment),
+# and SPANet is pinned to the same upstream commit.
+#   micromamba create -f environment-spanet-gpu.yml
+# The node's NVIDIA driver must support CUDA 12.1.
+name: spanet-gpu
+
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  - python=3.11.*
+  - pip
+  - numpy=1.26
+  - h5py
+  - numba
+  - opt_einsum
+  - sympy
+  - scikit-learn
+  - pyyaml
+  - rich
+  - tensorboard
+  - pytorch=2.3
+  - pytorch-cuda=12.1
+  - pytorch-lightning=2.4
+  - pip:
+      - "spanet @ git+https://github.com/Alexanders101/SPANet@46c68051fbc6178b932b8eec562c792886769511"

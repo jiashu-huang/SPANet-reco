@@ -18,7 +18,9 @@ agree on feature and target names.
 
 ## Preparing the input
 
-The extractor output is followed by one derived-feature step:
+[`spanet_reco.build_dataset`](running.md#2-build-training-validation-and-test-files-brux)
+adds the derived features while building the training files. For a single
+extracted file, the same step is available on its own:
 
 ```bash
 micromamba run -n spanet-reco python -m spanet_reco.features extracted.h5 model-input.h5
@@ -64,7 +66,7 @@ The values are those of the pilot study
 | --- | --- | --- | --- |
 | `partial_events` | true | false | Train on fully matched events only, as in the [target contract](target-contract.md) |
 | `detection_loss_scale` | 1.0 | 0.0 | With fully matched events only, the detection target is always 1 |
-| `dataset_randomization` | unset | 20260912 | Shuffle before the train/validation split, so validation mixes both samples |
+| `dataset_randomization` | unset | 20260912 | Shuffle rows before any subset (`-p`) or split taken from the training file; built datasets are already shuffled |
 | `batch_size`, `epochs`, `num_gpu`, `num_dataloader_workers` | command line | 128, 15, 0, 0 | The pilot's launcher values, recorded in the file |
 
 `spanet.train` builds its options in this order: dataset paths from
@@ -78,20 +80,13 @@ smaller than one batch produces no validation metric and no best checkpoint.
 
 ## Training command
 
-With SPANet's environment and a prepared training file:
-
-```bash
-PYTHONNOUSERSITE=1 /isilon/export/home/jhuan166/Vcb/external/SPANet/environment/bin/python \
-  -m spanet.train -ef configs/event-vcb.yaml -of configs/options-vcb.json \
-  -tf model-input.h5 -l outputs -n vcb
-```
-
-On 2026-09-22 this ran for two epochs on the development fixture (190 of 200
-events fully matched after the jet cuts), confirming that the three files load
-together. The fixture is too small for a meaningful result.
+[`scripts/train.sh`](../scripts/train.sh) runs `spanet.train` with these files
+and a built dataset; see [Running the pipeline](running.md). With a separate
+validation file, SPANet validates on all of it, and `train_validation_split` is
+unused.
 
 ## Not yet decided
 
-- Training, validation, and test samples, their sizes, and a per-event sample label.
 - Whether to keep SPANet's standard loss and checkpoint selection, or use the
   pilot's per-sample full-assignment selection.
+- Evaluation on the test split, reported separately for each sample.

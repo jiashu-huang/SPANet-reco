@@ -49,6 +49,27 @@ def _check_phi(values: np.ndarray, real: np.ndarray, group: str, start: int) -> 
         )
 
 
+def sin_cos(
+    values: np.ndarray, real: np.ndarray | None, group: str, start: int = 0
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return sin(phi) and cos(phi) in the dtype of phi, zero where real is false.
+
+    real is MASK for a sequential input and None for a global input, which has
+    one real object per event. start offsets event numbers in error messages.
+    """
+    if real is None:
+        real = np.ones(values.shape, dtype=bool)
+    if real.shape != values.shape:
+        raise ValueError(f"INPUTS/{group}: MASK shape {real.shape} differs from phi")
+    _check_phi(values, real, group, start)
+    # Padded slots stay zero for every feature, as in the extractor output.
+    angles = np.where(real, values, 0)
+    return (
+        np.where(real, np.sin(angles), 0).astype(values.dtype),
+        np.where(real, np.cos(angles), 0).astype(values.dtype),
+    )
+
+
 def _write_angles(source: h5py.Group, target: h5py.Group, group: str, chunk_size: int) -> None:
     phi = source[PHI_FEATURE]
     mask = source["MASK"] if "MASK" in source else None
@@ -67,16 +88,10 @@ def _write_angles(source: h5py.Group, target: h5py.Group, group: str, chunk_size
     }
     for start in range(0, phi.shape[0], chunk_size):
         stop = min(start + chunk_size, phi.shape[0])
-        values = phi[start:stop]
-        # Sequential inputs mark real objects with MASK; global inputs have one per event.
-        real = mask[start:stop] if mask is not None else np.ones(values.shape, dtype=bool)
-        if real.shape != values.shape:
-            raise ValueError(f"INPUTS/{group}: MASK shape {real.shape} differs from phi")
-        _check_phi(values, real, group, start)
-        # Padded slots stay zero for every feature, as in the extractor output.
-        angles = np.where(real, values, 0)
-        outputs[SIN_FEATURE][start:stop] = np.where(real, np.sin(angles), 0).astype(phi.dtype)
-        outputs[COS_FEATURE][start:stop] = np.where(real, np.cos(angles), 0).astype(phi.dtype)
+        real = mask[start:stop] if mask is not None else None
+        sin, cos = sin_cos(phi[start:stop], real, group, start)
+        outputs[SIN_FEATURE][start:stop] = sin
+        outputs[COS_FEATURE][start:stop] = cos
 
 
 def add_angular_features(

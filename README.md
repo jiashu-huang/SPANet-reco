@@ -15,10 +15,12 @@ sibling `nano-spanet-extractor` repository. Its cuts (jets with pT > 25 GeV and
 abs(eta) < 2.4, following AN-25-214) and tag-score fillers are declared in the
 version 2 extraction mapping [`configs/extract-vcb.yaml`](configs/extract-vcb.yaml);
 the extractor has no built-in cut values or cut options.
-The SPANet event definition, training options, and the step adding sin(phi) and
-cos(phi) inputs are in place and load in SPANet (see
-[SPANet configuration](docs/spanet-config.md)). Dataset preparation at scale,
-training runs, and evaluation are not implemented yet.
+The SPANet event definition and training options are in place (see
+[SPANet configuration](docs/spanet-config.md)). The September 8 Summer24 MC is
+extracted and built into training, validation, and test files, and a training
+launcher is ready for a GPU node (see [Running the pipeline](docs/running.md)).
+[README-extraction.md](README-extraction.md) summarizes how the current dataset was made.
+Evaluation is not implemented yet.
 
 ## Model inputs
 
@@ -114,7 +116,7 @@ training must check the final extracted target masks, as specified in the
 [target contract](docs/target-contract.md). This fixture is for development;
 it does not define the eventual training or evaluation datasets.
 
-## Decisions required before training
+## Open decisions
 
-- Training, validation, and test samples, their sizes, and a per-event sample label.
 - Whether to keep SPANet's standard loss and checkpoint selection.
+- Evaluation on the test split, reported separately for each sample.
