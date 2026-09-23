@@ -56,39 +56,83 @@ The build took two minutes and 1.1 GB of memory, and wrote 700 MB:
 ## 3. Copy to the GPU cluster
 
 Only the built dataset directory is needed; MC and extracted parts stay on BRUX.
+Write checksums before copying, so the copy can be verified:
 
 ```bash
-rsync -av data/datasets/mc20260908-v1 CLUSTER:DATA_DIR/
+cd data/datasets/mc20260908-v1
+sha256sum summary.json train.h5 validation.h5 test.h5 > SHA256SUMS
 ```
 
-On the cluster, clone this repository and create the SPANet environment once:
+On the cluster, clone this repository, create the dataset directory, and create
+the SPANet environment once. On Brown's Oscar, conda comes from a module and the
+environment is built on a login node (it needs internet access):
 
 ```bash
-git clone git@github.com:jiashu-huang/SPANet-reco.git
-cd SPANet-reco
-micromamba create -f environment-spanet-gpu.yml
+cd /oscar/home/jhuan166/Vcb
+git clone https://github.com/jiashu-huang/SPANet-reco.git
+mkdir -p SPANet-reco/data/datasets SPANet-reco/outputs
+module load anaconda3/2023.09-0-aqbc
+conda env create -f SPANet-reco/environment-spanet-gpu.yml
 ```
 
 [`environment-spanet-gpu.yml`](../environment-spanet-gpu.yml) pins the versions
 used to develop the configuration (Python 3.11, PyTorch 2.3 with CUDA 12.1,
 Lightning 2.4) and SPANet at upstream commit `46c6805`. Training needs only
-SPANet, the configs, and `scripts/train.sh`; the `spanet_reco` package is not
-required on the cluster.
+SPANet, the configs, and the scripts; the `spanet_reco` package is not required
+on the cluster.
+
+Then, from BRUX, copy the dataset and verify it on the cluster:
+
+```bash
+rsync -ah --partial --info=progress2 \
+  /isilon/export/home/jhuan166/Vcb/SPANet-reco/data/datasets/mc20260908-v1 \
+  jhuan166@transfer.ccv.brown.edu:/oscar/home/jhuan166/Vcb/SPANet-reco/data/datasets/
+```
+
+```bash
+cd /oscar/home/jhuan166/Vcb/SPANet-reco/data/datasets/mc20260908-v1 && sha256sum -c SHA256SUMS
+```
+
+`--partial` keeps an interrupted file, so rerunning the same command resumes it.
 
 ## 4. Train
 
+On Oscar, submit from the repository root:
+
 ```bash
-SPANET_PYTHON="$(micromamba run -n spanet-gpu python -c 'import sys; print(sys.executable)')" \
-  scripts/train.sh DATA_DIR/mc20260908-v1 outputs/run1 -g 1 -b 1024
+cd /oscar/home/jhuan166/Vcb/SPANet-reco
+sbatch scripts/slurm_oscar.sh
 ```
 
-[`scripts/train.sh`](../scripts/train.sh) runs `spanet.train` with the event and
-options files, `train.h5`, and `validation.h5`. Options after the output
-directory override [`configs/options-vcb.json`](../configs/options-vcb.json):
-`-g 1` uses one GPU, `-b` sets the batch size, and `-e` the number of epochs
-(15 by default). The run directory receives `train.log`, the dataset's
-`summary.json`, the repository revision, and SPANet's `vcb/version_N/` with
-checkpoints, TensorBoard logs, and copies of the options and event files.
+[`scripts/slurm_oscar.sh`](../scripts/slurm_oscar.sh) requests one GPU in the
+`gpu` partition, 4 CPUs, 16 GB, and 6 hours; it activates `spanet-gpu`, checks
+that PyTorch can run on the allocated GPU, and trains on
+`data/datasets/mc20260908-v1` into `outputs/<job id>` with `-g 1 -b 1024`. The
+job log is `outputs/slurm-<job id>.out`. Arguments select another dataset,
+output directory, or options, and sbatch options override the resources:
+
+```bash
+sbatch --time=12:00:00 scripts/slurm_oscar.sh data/datasets/mc20260908-v1 outputs/run2 -g 1 -b 2048 -e 20
+```
+
+Every card in the `gpu` partition works with PyTorch 2.3. The Blackwell cards
+on `gpu-he` (B200, RTX PRO 6000 Blackwell) need a newer PyTorch; the GPU check
+stops such a job before training.
+
+Elsewhere, [`scripts/train.sh`](../scripts/train.sh) runs training directly:
+
+```bash
+SPANET_PYTHON=/path/to/spanet-environment/bin/python \
+  scripts/train.sh data/datasets/mc20260908-v1 outputs/run1 -g 1 -b 1024
+```
+
+`scripts/train.sh` runs `spanet.train` with the event and options files,
+`train.h5`, and `validation.h5`. Options after the output directory override
+[`configs/options-vcb.json`](../configs/options-vcb.json): `-g 1` uses one GPU,
+`-b` sets the batch size, and `-e` the number of epochs (15 by default). The
+run directory receives `train.log`, the dataset's `summary.json`, the
+repository revision, and SPANet's `vcb/version_N/` with checkpoints,
+TensorBoard logs, and copies of the options and event files.
 
 The options keep the pilot's batch size of 128 and learning rate of 0.001. At
 batch 128 an epoch is about 12,300 steps; `-b 1024` needs about 1,500. The
