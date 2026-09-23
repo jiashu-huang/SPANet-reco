@@ -2,9 +2,18 @@
 
 import numpy as np
 
-N_TARGETS = 4
+TARGET_BRANCHES = (
+    "GenHadBJetIdx",
+    "GenHadQ1JetIdx",
+    "GenHadQ2JetIdx",
+    "GenLepBJetIdx",
+)
+N_TARGETS = len(TARGET_BRANCHES)
 N_SAVED_JETS = 10
-N_INPUT_JETS = 7
+# Every saved slot may reach the model: the extractor removes jets failing its cuts and
+# compacts the seven leading passing jets, so saved slots 7 to 9 can be retained. This
+# pre-cut check cannot know which are; final eligibility comes from extracted target masks.
+N_INPUT_JETS = 10
 
 
 def fully_matched_mask(targets: np.ndarray, n_jets: np.ndarray) -> np.ndarray:
@@ -23,7 +32,8 @@ def fully_matched_mask(targets: np.ndarray, n_jets: np.ndarray) -> np.ndarray:
     -------
     np.ndarray
         Boolean array with shape (n_events,), identifying events whose
-        four assignments refer to distinct real jets in slots 0 through 6.
+        four assignments refer to distinct real jets in the first
+        N_INPUT_JETS saved slots (currently all ten).
 
     Raises
     ------

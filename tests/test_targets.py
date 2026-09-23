@@ -8,18 +8,18 @@ def test_selection_and_input_preservation():
     targets = np.array(
         [
             [0, 1, 2, 3],  # Four real jets, all matched.
-            [0, 1, 2, 6],  # Last retained slot is valid.
-            [0, 1, 2, 7],  # Match outside the retained inputs.
+            [0, 1, 2, 6],  # Slot 6 is valid.
+            [0, 1, 2, 7],  # Saved slots 7 to 9 can be retained after compaction.
             [0, 1, -1, 2],  # One unmatched parton.
             [-1, -1, -1, -1],  # Repeated missing markers are allowed.
-            [0, 1, 2, 9],  # Valid saved slot in an event with 12 jets.
-            [-1, 1, 2, 7],  # Both exclusion reasons apply.
+            [0, 1, 2, 9],  # Last saved slot in an event with 12 jets.
+            [-1, 1, 2, 7],  # Unmatched, even though slot 7 is a candidate.
             [6, 2, 1, 0],  # Extra upstream jets do not force exclusion.
         ],
         dtype=np.int64,
     )
     n_jets = np.array([4, 7, 8, 3, 0, 12, 8, 12], dtype=np.int64)
-    expected = np.array([True, True, False, False, False, False, False, True])
+    expected = np.array([True, True, True, False, False, True, False, True])
 
     original_targets = targets.copy()
     original_counts = n_jets.copy()
@@ -37,11 +37,11 @@ def test_selection_and_input_preservation():
     [
         ([0, 1, 1, 3], 4),  # Duplicate real-jet assignment.
         ([-1, 1, 1, 3], 4),  # Invalid even though already incomplete.
-        ([0, 1, 8, 8], 9),  # Duplicates outside the retained inputs.
+        ([0, 1, 8, 8], 9),  # Duplicates in a high saved slot.
         ([0, 1, 2, -2], 4),  # Unsupported negative index.
         ([0, 1, 2, 10], 12),  # Outside the ten saved slots.
         ([0, 1, 2, 4], 4),  # Assignment to an empty upstream slot.
-        ([0, 1, 2, 8], 8),  # Empty slot, also outside retained inputs.
+        ([0, 1, 2, 8], 8),  # Empty high slot.
         ([-1, -1, -1, -1], -1),  # Invalid jet count.
     ],
 )
@@ -96,7 +96,7 @@ def test_read_only_integer_arrays(dtype):
 
     np.testing.assert_array_equal(
         fully_matched_mask(targets, n_jets),
-        np.array([True, False]),
+        np.array([True, True]),
         strict=True,
     )
 

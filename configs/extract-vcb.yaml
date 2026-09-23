@@ -1,0 +1,70 @@
+version: 2
+tree: Events
+dtype: float32
+overflow: truncate
+
+sequential:
+  Jets:
+    max_objects: 7        # slots written
+    source_objects: 10    # saved upstream slots read; passing jets fill slots 0-6
+    count: nJets
+    features:
+      mass: ak4JetMass{i}
+      pt: ak4JetPt{i}
+      eta: ak4JetEta{i}
+      phi: ak4JetPhi{i}
+      btag_raw: ak4JetbtagPNetB{i}
+      charge_raw: ak4JetParTPosvsNeg{i}
+
+# Every cut, threshold, and filler is declared here; the extractor has none built in.
+# Jets follow AN-25-214 (Sec. 3.3, Table 9): pT > 25 GeV and |eta| < 2.4, both strict.
+# Jets failing either cut are removed; the first seven passing jets of the ten saved
+# slots, in pT order, fill slots 0-6. Targets move with their jets.
+jet_selection:
+  input: Jets
+  pt: pt
+  min_pt: 25
+  eta: eta
+  max_abs_eta: 2.4
+
+# Scores are shown only for the three highest-b-tag retained jets. Events whose
+# selected jets lack a charge score (-1) are rejected.
+tag_selection:
+  input: Jets
+  top_n: 3
+  btag: btag_raw
+  charge: charge_raw
+  include_charge: true
+  eta: eta
+  max_abs_eta: 2.4        # same as jet_selection, so it removes nothing more
+  fill:                   # written on retained jets whose scores are not shown
+    btag: 0               # real scores are never exactly 0; reads as "not b-like"
+    charge: 0.5           # neutral point of ParTPosvsNeg: no charge information
+  indicator: tag_selected # 0/1 jet feature: 1 where the scores are shown
+
+global:
+  Lepton:
+    pt: TriggerLeptonPt
+    eta: TriggerLeptonEta
+    phi: TriggerLeptonPhi
+    charge: TriggerLeptonCharge
+  Met:
+    pt: METPt
+    phi: METPhi
+
+targets:
+  had_top:
+    b: {input: Jets, branch: GenHadBJetIdx}
+    q1: {input: Jets, branch: GenHadQ1JetIdx}
+    q2: {input: Jets, branch: GenHadQ2JetIdx}
+  lep_top:
+    b: {input: Jets, branch: GenLepBJetIdx}
+
+metadata:
+  run: run
+  luminosityBlock: luminosityBlock
+  event: event
+  GenHadBJetIdx: GenHadBJetIdx
+  GenHadQ1JetIdx: GenHadQ1JetIdx
+  GenHadQ2JetIdx: GenHadQ2JetIdx
+  GenLepBJetIdx: GenLepBJetIdx

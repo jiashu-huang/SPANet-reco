@@ -20,10 +20,14 @@ will be specified separately.
 | lep_top/b     | GenLepBJetIdx |
 
 Each target is an integer index into the retained, pT-ordered jet
-collection. All real retained jets are eligible assignment candidates.
+collection: the seven leading jets passing pT > 25 GeV and abs(eta) < 2.4,
+written to slots 0 through 6. The extractor rewrites each upstream index,
+which refers to the ten saved slots, as its jet's written slot. All retained
+jets are eligible assignment candidates.
 
 The top-three b-tag feature selection does not restrict which jets
-may be assigned to these roles.
+may be assigned to these roles: a retained jet whose scores are not shown
+remains a candidate.
 
 Generator information is used for targets, training selection, and
 diagnostics. It is excluded from model input features.
@@ -39,13 +43,20 @@ Use the upstream truth assignments without recomputing matching.
 
 An event is fully matched within the retained inputs when:
 
-- All four indices refer to real, unpadded jets among slots 0 through 6.
+- All four assigned jets pass the corrected pT > 25 GeV and abs(eta) < 2.4
+  jet requirements.
+- All four assigned jets are among the seven leading passing jets, so each has
+  a written slot from 0 through 6.
 - All four indices are distinct.
 
-An upstream index of -1 denotes an unmatched parton.
-Indices 7 through 9 refer to jets outside the retained inputs.
-Events containing either case are excluded from this first training
-baseline.
+An upstream index of -1 denotes an unmatched parton. The extractor also sets a
+target to -1 if its jet fails the pT or eta requirement, or is not among the
+seven leading passing jets. Events containing any of these cases are excluded
+from this first training baseline. Validate final extracted target masks: the
+ROOT target reader checks upstream assignments before the jet requirements. It
+accepts assignments in all ten saved slots (`N_INPUT_JETS = 10`), because
+compaction can retain jets from saved slots 7 through 9, so it cannot tell which
+assigned jets the extractor will keep.
 
 Duplicate nonnegative assignments, indices outside the upstream
 range, and assignments to empty upstream slots are validation errors.
@@ -59,7 +70,9 @@ Record counts separately for each source sample:
 
 - Events considered.
 - Events with at least one unmatched parton.
-- Events with at least one match outside the retained seven jets.
+- Events with at least one assigned jet failing the pT or eta requirement.
+- Events with at least one assigned jet passing both but not among the seven
+  leading passing jets.
 - Total excluded events.
 - Fully matched events retained.
 
