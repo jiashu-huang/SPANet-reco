@@ -2,6 +2,8 @@
 
 Event reconstruction for the Vcb analysis using SPANet, focusing on
 reconstructing top and antitop decays in signal and background MC samples.
+The immediate goal is to select the two hadronic-W daughter jets in each
+event, as an unordered pair; b-tagging of those jets is applied afterwards.
 
 ## Status 
 
@@ -13,22 +15,26 @@ sibling `nano-spanet-extractor` repository. Its cuts (jets with pT > 25 GeV and
 abs(eta) < 2.4, following AN-25-214) and tag-score fillers are declared in the
 version 2 extraction mapping [`configs/extract-vcb.yaml`](configs/extract-vcb.yaml);
 the extractor has no built-in cut values or cut options.
-Training and evaluation are not implemented yet.
+The SPANet event definition, training options, and the step adding sin(phi) and
+cos(phi) inputs are in place and load in SPANet (see
+[SPANet configuration](docs/spanet-config.md)). Dataset preparation at scale,
+training runs, and evaluation are not implemented yet.
 
-## Proposed model inputs
+## Model inputs
 
 | Object    | Selection | Features  |
 | ---       | ---       | ---       |
-| Jets                          | Up to seven jets with corrected pT > 25 GeV and abs(eta) < 2.4, ordered by decreasing pT | Mass, transverse momentum, eta, phi |
-| MET                           | Event MET                                     | Magnitude, phi |
-| Lepton                        | Trigger lepton only                           | Transverse momentum, eta, phi, charge |
+| Jets                          | Up to seven jets with corrected pT > 25 GeV and abs(eta) < 2.4, ordered by decreasing pT | Mass, transverse momentum, eta, sin(phi), cos(phi) |
+| MET                           | Event MET                                     | Magnitude, sin(phi), cos(phi) |
+| Lepton                        | Trigger lepton only                           | Transverse momentum, eta, sin(phi), cos(phi), charge |
 | Jets ranked by b-tag score    | Up to three retained jets with the highest available PNet B-tag scores | PNet B-tag score and corresponding ParTPosvsNeg jet charge score (fillers 0 and 0.5 on other retained jets), and a 0/1 `tag_selected` indicator |
 
 Each jet charge score must remain associated with the same jet as its 
 accompanying b-tag score. The exact branch mapping and preparation rules are 
 described in the [input contract](docs/input-contract.md). To change a selection
 threshold, edit the extraction mapping; the output records it in `PROVENANCE/config`.
-The [target contract](docs/target-contract.md) describes the assignment task.
+The [target contract](docs/target-contract.md) describes the assignment task, and
+[SPANet configuration](docs/spanet-config.md) describes the event and options files.
 
 ## Development setup
 
@@ -48,8 +54,9 @@ micromamba run -n spanet-reco python -m pip install -e ".[dev]"
 
 Editable installation makes source changes available without reinstalling.
 Rerun the installation command after changing dependencies or package
-metadata. The `dev` extra installs pytest, Ruff, and h5py for recovering
-development fixtures from the legacy pilot files. ROOT reading uses Uproot.
+metadata. ROOT reading uses Uproot and HDF5 access uses h5py. The `dev` extra
+installs pytest, Ruff, and PyYAML for the configuration consistency tests.
+SPANet itself runs in its own environment, `external/SPANet/environment`.
 
 Commands below explicitly select the environment, so shell activation
 is unnecessary.
@@ -107,9 +114,7 @@ training must check the final extracted target masks, as specified in the
 [target contract](docs/target-contract.md). This fixture is for development;
 it does not define the eventual training or evaluation datasets.
 
-## Decisions required before implementation
+## Decisions required before training
 
-- Padding and masks for events with fewer than the required objects.
-- The SPANet event definition's input list, which must add `tag_selected`.
-- Custom loss function.
-- Training, validation, and test split definitions.
+- Training, validation, and test samples, their sizes, and a per-event sample label.
+- Whether to keep SPANet's standard loss and checkpoint selection.

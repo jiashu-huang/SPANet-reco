@@ -117,11 +117,17 @@ below 25 GeV, or abs(eta) >= 2.4) or is not among the seven leading passing jets
 Represent it as target `-1` and set the corresponding particle target mask false.
 Apply the fully matched baseline to these final targets.
 
+## Model features
+
+After extraction, `python -m spanet_reco.features` adds `sin_phi` and
+`cos_phi` for jets, the trigger lepton, and MET, zero on padded jets. The model
+reads these instead of raw phi, which stays in the file. The model's feature
+list and preprocessing are defined in the event file
+[`configs/event-vcb.yaml`](../configs/event-vcb.yaml); see
+[SPANet configuration](spanet-config.md).
+
 ## Decisions still required
 
 - Additional analysis selections, if any. Any new cut must be declared, with
   its threshold, in the extraction mapping.
-- The SPANet event definition's input list, which must add `tag_selected`.
-- Final training configuration for padding and masks.
-- Feature transformations and normalization.
 - Event weights, dataset splits, and the training loss.

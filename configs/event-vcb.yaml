@@ -1,0 +1,44 @@
+# SPANet event definition for the Vcb jet assignment.
+#
+# Inputs are read from HDF5 produced by configs/extract-vcb.yaml and then
+# `python -m spanet_reco.features`, which adds sin_phi and cos_phi. Group and
+# feature names must match that file exactly; raw phi is present but not read.
+# SEQUENTIAL must come before GLOBAL for this SPANet version.
+INPUTS:
+  SEQUENTIAL:
+    Jets:
+      mass: log_normalize
+      pt: log_normalize
+      eta: normalize
+      sin_phi: normalize
+      cos_phi: normalize
+      btag_raw: none       # top-three PNet B scores, filler 0 elsewhere
+      charge_raw: none     # ParTPosvsNeg on the same jets, filler 0.5 elsewhere
+      tag_selected: none   # 1 where the scores above are shown
+
+  GLOBAL:
+    Lepton:
+      pt: log_normalize
+      eta: normalize
+      sin_phi: normalize
+      cos_phi: normalize
+      charge: none         # -1 or +1
+    Met:
+      pt: log_normalize
+      sin_phi: normalize
+      cos_phi: normalize
+
+# Names are also the target paths: TARGETS/had_top/{b,q1,q2}, TARGETS/lep_top/b.
+EVENT:
+  had_top:
+    - b: Jets
+    - q1: Jets
+    - q2: Jets
+  lep_top:
+    - b: Jets
+
+# The W daughters form an unordered pair: SPANet selects the two W jets without
+# deciding which is the up- or down-type quark.
+PERMUTATIONS:
+  had_top:
+    - [q1, q2]
