@@ -4,15 +4,19 @@
 # as seven parallel parts. Run from the SPANet-reco root; it takes about 2 minutes.
 # The extractor refuses to overwrite existing parts. Check logs/status.txt for
 # one exit=0 line per part.
+#
+# CONFIG and OUT select another mapping and output directory, for example
+#   CONFIG=configs/extract-vcb-new.yaml OUT=data/extracted/mc20260908-new scripts/extract_mc20260908.sh
 set -uo pipefail
 M=/isilon/export/home/jhuan166/Vcb/MC
 X=../nano-spanet-extractor/.venv/bin/nano-spanet-extract
-O=data/extracted/mc20260908
+CONFIG=${CONFIG:-configs/extract-vcb.yaml}
+O=${OUT:-data/extracted/mc20260908}
 mkdir -p "$O/signal" "$O/background" "$O/logs"
 SIG=$M/TTtoLNuCB_Summer24MiniAODv6/NanoAOD-processed/prod_20260908_TTtoLNuCB_syst/roots
 BKG=$M/TTtoLNu2Q_Summer24MiniAODv6/NanoAOD-processed/prod_20260908_TTtoLNu2Q_syst/roots
 run() {  # sample input-dir part pattern
-  "$X" --input-dir "$2" --pattern "$4" --config configs/extract-vcb.yaml \
+  "$X" --input-dir "$2" --pattern "$4" --config "$CONFIG" \
     --output "$O/$1/part$3.h5" > "$O/logs/$1-part$3.log" 2>&1
   echo "$1 part$3 exit=$?" >> "$O/logs/status.txt"
 }

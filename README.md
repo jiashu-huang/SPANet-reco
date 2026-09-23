@@ -47,6 +47,8 @@ W mass chi-square: `alpha * L_SPANet + (1 - alpha) * <chi2>`.
 | --- | --- |
 | [README-extraction.md](README-extraction.md) | How the current dataset was made, with event counts |
 | [docs/running.md](docs/running.md) | Commands for every step, including the transfer to Oscar and Slurm |
+| [docs/oscar.md](docs/oscar.md) | Command-line route on Oscar: setup, transfer, submission, monitoring, results, and comparison |
+| [docs/features.md](docs/features.md) | Choosing training features: the extraction mapping and the SPANet event file |
 | [docs/spanet-config.md](docs/spanet-config.md) | Event and options files, the mass chi-square loss, and its test runs |
 | [docs/custom-loss.md](docs/custom-loss.md) | How to add a physics term to the training loss |
 | [docs/input-contract.md](docs/input-contract.md) | Input branches, jet selection, tag scores, and event rejection |

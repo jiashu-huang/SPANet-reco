@@ -2,7 +2,8 @@
 
 Four steps turn processed MC into a trained model. The first two run on BRUX,
 where the MC is stored; training runs on a GPU node. Run commands from the
-repository root.
+repository root. [Running on Oscar](oscar.md) collects the cluster steps into one
+command-line route, including monitoring and reading results.
 
 ## 1. Extract features (BRUX)
 
