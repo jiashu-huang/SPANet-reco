@@ -4,19 +4,26 @@
 # Submit from the repository root, after `mkdir -p outputs`:
 #   sbatch scripts/slurm_oscar.sh [DATA_DIR] [OUTPUT_DIR] [spanet.train options...]
 # Defaults: DATA_DIR=data/datasets/mc20260908-v1, OUTPUT_DIR=outputs/<job id>,
-# options "-g 1 -b 1024". Resources below can be overridden on the sbatch
-# command line, for example --time=08:00:00.
+# options "-g 1 -b 1024". Resources below follow the group's Oscar template and
+# can be overridden on the sbatch command line, for example --time=08:00:00 or
+# --mail-user=you@brown.edu for the end-of-job email.
 #
-# The gpu partition's cards all work with the environment's PyTorch 2.3
-# (CUDA 12.1). Blackwell cards (B200, RTX PRO 6000 Blackwell) on gpu-he do not;
-# the check below stops such a job before training.
+# The L40S cards of l40s-gcondo work with the environment's PyTorch 2.3
+# (CUDA 12.1). Blackwell cards (B200, RTX PRO 6000 Blackwell) do not; the check
+# below stops a job on such a card before training.
 #SBATCH --job-name=spanet-vcb
-#SBATCH --partition=gpu
+#SBATCH --partition=l40s-gcondo
+#SBATCH --time=5:00:00             # run time limit (HH:MM:SS)
+#SBATCH --cpus-per-task=4          # CPU cores per task
+#SBATCH --mem=32G                  # memory per node
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
-#SBATCH --time=06:00:00
-#SBATCH --output=outputs/slurm-%j.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --error=outputs/spanet-vcb-%A.err   # %A: job ID
+#SBATCH --output=outputs/spanet-vcb-%A.out
+##SBATCH --mail-type=begin         # email when the job begins
+#SBATCH --mail-type=end            # email when the job ends
+##SBATCH --mail-user=email@brown.edu   # or pass --mail-user to sbatch
 set -euo pipefail
 
 cd "${SLURM_SUBMIT_DIR:-.}"

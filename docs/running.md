@@ -104,20 +104,42 @@ cd /oscar/home/jhuan166/Vcb/SPANet-reco
 sbatch scripts/slurm_oscar.sh
 ```
 
-[`scripts/slurm_oscar.sh`](../scripts/slurm_oscar.sh) requests one GPU in the
-`gpu` partition, 4 CPUs, 16 GB, and 6 hours; it activates `spanet-gpu`, checks
-that PyTorch can run on the allocated GPU, and trains on
-`data/datasets/mc20260908-v1` into `outputs/<job id>` with `-g 1 -b 1024`. The
-job log is `outputs/slurm-<job id>.out`. Arguments select another dataset,
-output directory, or options, and sbatch options override the resources:
+[`scripts/slurm_oscar.sh`](../scripts/slurm_oscar.sh) requests one L40S GPU
+in `l40s-gcondo`, 4 CPUs, 32 GB, and 5 hours, and emails at the end of the job.
+It activates `spanet-gpu`, checks that PyTorch can run on the allocated GPU,
+and trains on `data/datasets/mc20260908-v1` into `outputs/<job id>` with
+`-g 1 -b 1024`. Slurm writes `outputs/spanet-vcb-<job id>.out` and `.err`.
+Arguments select another dataset, output directory, or options, and sbatch
+options override the resources:
 
 ```bash
-sbatch --time=12:00:00 scripts/slurm_oscar.sh data/datasets/mc20260908-v1 outputs/run2 -g 1 -b 2048 -e 20
+sbatch --time=12:00:00 --mail-user=you@brown.edu scripts/slurm_oscar.sh \
+  data/datasets/mc20260908-v1 outputs/run2 -g 1 -b 2048 -e 20
 ```
 
-Every card in the `gpu` partition works with PyTorch 2.3. The Blackwell cards
-on `gpu-he` (B200, RTX PRO 6000 Blackwell) need a newer PyTorch; the GPU check
-stops such a job before training.
+L40S cards work with PyTorch 2.3. The Blackwell cards on other partitions
+(B200, RTX PRO 6000 Blackwell) need a newer PyTorch; the GPU check stops such a
+job before training.
+
+The job header follows the group's template for Oscar GPU jobs. Start other
+jobs from it; the directory in `--output` and `--error` must exist before
+submission:
+
+```bash
+#SBATCH --job-name=sglopart
+#SBATCH --partition=l40s-gcondo
+#SBATCH --time=5:00:00             # run time limit (HH:MM:SS)
+#SBATCH --cpus-per-task=4          # CPU cores per task
+#SBATCH --mem=32G                  # memory per node
+#SBATCH --gres=gpu:1
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --error=out/sglopart-%A.err    # %A: job ID
+#SBATCH --output=out/sglopart-%A.out
+##SBATCH --mail-type=begin         # email when the job begins
+#SBATCH --mail-type=end            # email when the job ends
+#SBATCH --mail-user=email@brown.edu
+```
 
 Elsewhere, [`scripts/train.sh`](../scripts/train.sh) runs training directly:
 
