@@ -86,8 +86,12 @@ Then, from BRUX, copy the dataset and verify it on the cluster:
 ```bash
 rsync -ah --partial --info=progress2 \
   /isilon/export/home/jhuan166/Vcb/SPANet-reco/data/datasets/mc20260908-v1 \
-  jhuan166@transfer.ccv.brown.edu:/oscar/home/jhuan166/Vcb/SPANet-reco/data/datasets/
+  jhuan166@ssh.ccv.brown.edu:/oscar/home/jhuan166/Vcb/SPANet-reco/data/datasets/
 ```
+
+Use the login host `ssh.ccv.brown.edu` (password and Duo). On 2026-09-23 the
+transfer host `transfer.ccv.brown.edu` closed the connection after the password
+(rsync code 12).
 
 ```bash
 cd /oscar/home/jhuan166/Vcb/SPANet-reco/data/datasets/mc20260908-v1 && sha256sum -c SHA256SUMS

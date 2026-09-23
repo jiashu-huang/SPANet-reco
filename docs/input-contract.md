@@ -126,8 +126,16 @@ list and preprocessing are defined in the event file
 [`configs/event-vcb.yaml`](../configs/event-vcb.yaml); see
 [SPANet configuration](spanet-config.md).
 
+## Dataset splits and training loss
+
+`spanet_reco.build_dataset` assigns each source ROOT file to training,
+validation, or test (80/10/10 per sample), keeps fully matched events balanced
+between samples for training and validation, and keeps every event for test;
+see [Running the pipeline](running.md). The training loss is SPANet's, with an
+optional mass chi-square term; see [SPANet configuration](spanet-config.md).
+
 ## Decisions still required
 
 - Additional analysis selections, if any. Any new cut must be declared, with
   its threshold, in the extraction mapping.
-- Event weights, dataset splits, and the training loss.
+- Event weights. None are used: SPANet weights every event equally.

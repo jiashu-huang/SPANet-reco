@@ -79,6 +79,10 @@ Record counts separately for each source sample:
 Exclusion reasons may overlap. Count each excluded event only once
 in the total.
 
+The extraction and dataset build currently record events considered and fully
+matched per sample (see [README-extraction.md](../README-extraction.md) and each
+dataset's `summary.json`). The breakdown by exclusion reason is not yet produced.
+
 ## Evaluation
 
 A complete assignment is correct when both top-b assignments are

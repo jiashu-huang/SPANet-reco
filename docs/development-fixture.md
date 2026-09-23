@@ -143,7 +143,11 @@ environment:
 
 Choose a fresh output filename to repeat the command, or use `--overwrite` to
 deliberately replace a generated HDF5 file. The ROOT fixtures remain the inputs.
-Checked on 2026-09-22 with extractor commit `9b17b71` (jet compaction):
+This directory holds both samples, so the command writes one file with signal
+and background together; add `--pattern signal.root` or `--pattern
+background.root` for one sample. Checked on 2026-09-22 with extractor commit
+`9b17b71` (jet compaction), and again, per sample, with release 0.2.0 (`26fae68`),
+whose extraction code is the same; the outputs were not kept:
 
 | Sample | Input events | Missing selected charge | Written events | Fully matched after jet cuts |
 | --- | ---: | ---: | ---: | ---: |

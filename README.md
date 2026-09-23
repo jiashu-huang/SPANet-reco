@@ -1,78 +1,93 @@
 # SPANet-reco
 
-Event reconstruction for the Vcb analysis using SPANet, focusing on
-reconstructing top and antitop decays in signal and background MC samples.
-The immediate goal is to select the two hadronic-W daughter jets in each
-event, as an unordered pair; b-tagging of those jets is applied afterwards.
+Event reconstruction for the Vcb analysis with SPANet, in semileptonic ttbar
+signal (TTtoLNuCB, W to cb) and background (TTtoLNu2Q) MC. The immediate goal is
+to select the two hadronic-W daughter jets in each event, as an unordered pair;
+b-tagging of those jets is applied afterwards, outside SPANet.
 
-## Status 
+## Status
 
-2026-09-22
+2026-09-23
 
-Package setup, target validation, and ROOT target reading are implemented.
-A small development fixture is available. Feature extraction is handled by the
-sibling `nano-spanet-extractor` repository. Its cuts (jets with pT > 25 GeV and
-abs(eta) < 2.4, following AN-25-214) and tag-score fillers are declared in the
-version 2 extraction mapping [`configs/extract-vcb.yaml`](configs/extract-vcb.yaml);
-the extractor has no built-in cut values or cut options.
-The SPANet event definition and training options are in place (see
-[SPANet configuration](docs/spanet-config.md)). The September 8 Summer24 MC is
-extracted and built into training, validation, and test files, and a training
-launcher is ready for a GPU node (see [Running the pipeline](docs/running.md)).
-[README-extraction.md](README-extraction.md) summarizes how the current dataset was made.
-Evaluation is not implemented yet.
+- The September 8 Summer24 MC is extracted and built into training, validation,
+  and test files (`data/datasets/mc20260908-v1`, not in Git); see
+  [README-extraction.md](README-extraction.md).
+- The SPANet event definition, options, and an optional hadronic top and W mass
+  chi-square loss are in place and tested on CPU.
+- A Slurm job trains on one GPU of Brown's Oscar cluster.
+- Next: full-data training on Oscar, comparing plain SPANet with the mass
+  chi-square loss over several seeds, and evaluation on the test split.
 
-## Model inputs
+## Pipeline
 
-| Object    | Selection | Features  |
-| ---       | ---       | ---       |
-| Jets                          | Up to seven jets with corrected pT > 25 GeV and abs(eta) < 2.4, ordered by decreasing pT | Mass, transverse momentum, eta, sin(phi), cos(phi) |
-| MET                           | Event MET                                     | Magnitude, sin(phi), cos(phi) |
-| Lepton                        | Trigger lepton only                           | Transverse momentum, eta, sin(phi), cos(phi), charge |
-| Jets ranked by b-tag score    | Up to three retained jets with the highest available PNet B-tag scores | PNet B-tag score and corresponding ParTPosvsNeg jet charge score (fillers 0 and 0.5 on other retained jets), and a 0/1 `tag_selected` indicator |
+| Step | Tool | Where it runs | Guide |
+| --- | --- | --- | --- |
+| 1. Extract features and truth assignments from processed MC | `nano-spanet-extractor` with [`configs/extract-vcb.yaml`](configs/extract-vcb.yaml), via [`scripts/extract_mc20260908.sh`](scripts/extract_mc20260908.sh) | BRUX | [Running the pipeline](docs/running.md#1-extract-features-brux) |
+| 2. Build training, validation, and test files | `python -m spanet_reco.build_dataset` | BRUX | [Running the pipeline](docs/running.md#2-build-training-validation-and-test-files-brux) |
+| 3. Train | [`scripts/slurm_oscar.sh`](scripts/slurm_oscar.sh) or [`scripts/train.sh`](scripts/train.sh), which run `python -m spanet_reco.train` | GPU node | [Running the pipeline](docs/running.md#4-train) |
+| 4. Compare runs | [`scripts/compare_checkpoints.py`](scripts/compare_checkpoints.py) | anywhere with SPANet | [Running the pipeline](docs/running.md#after-training) |
 
-Each jet charge score must remain associated with the same jet as its 
-accompanying b-tag score. The exact branch mapping and preparation rules are 
-described in the [input contract](docs/input-contract.md). To change a selection
-threshold, edit the extraction mapping; the output records it in `PROVENANCE/config`.
-The [target contract](docs/target-contract.md) describes the assignment task, and
-[SPANet configuration](docs/spanet-config.md) describes the event and options files.
+## Model
+
+| Object | Selection | Features |
+| --- | --- | --- |
+| Jets | Up to seven jets with corrected pT > 25 GeV and abs(eta) < 2.4 (AN-25-214), ordered by decreasing pT | Mass, transverse momentum, eta, sin(phi), cos(phi) |
+| Jets ranked by b-tag score | Up to three retained jets with the highest available PNet B-tag scores | PNet B-tag score and the same jet's ParTPosvsNeg charge score (fillers 0 and 0.5 on other jets), and a 0/1 `tag_selected` indicator |
+| Lepton | Trigger lepton | Transverse momentum, eta, sin(phi), cos(phi), charge |
+| MET | Event MET | Magnitude, sin(phi), cos(phi) |
+
+SPANet assigns jets to `had_top` (b, q1, q2), with q1 and q2 interchangeable, and
+to `lep_top` (b). Training uses fully matched events only. The loss is SPANet's
+cross-entropy of the true assignment, optionally combined with a hadronic top and
+W mass chi-square: `alpha * L_SPANet + (1 - alpha) * <chi2>`.
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [README-extraction.md](README-extraction.md) | How the current dataset was made, with event counts |
+| [docs/running.md](docs/running.md) | Commands for every step, including the transfer to Oscar and Slurm |
+| [docs/spanet-config.md](docs/spanet-config.md) | Event and options files, the mass chi-square loss, and its test runs |
+| [docs/custom-loss.md](docs/custom-loss.md) | How to add a physics term to the training loss |
+| [docs/input-contract.md](docs/input-contract.md) | Input branches, jet selection, tag scores, and event rejection |
+| [docs/target-contract.md](docs/target-contract.md) | Assignment targets, symmetry, fully matched baseline, and evaluation |
+| [docs/development-fixture.md](docs/development-fixture.md) | The 200-event development fixture and early checks |
+
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| `configs/` | Extraction mapping, SPANet event file, and SPANet options |
+| `src/spanet_reco/` | Target reading (`root_io`, `targets`), dataset build (`build_dataset`, `features`), and training (`model`, `train`) |
+| `scripts/` | Extraction, training, Slurm, comparison, and fixture preparation |
+| `tests/` | Tests with synthetic ROOT and HDF5 files; `spanet_model_checks.py` needs SPANet |
+| `environment.yml`, `environment-spanet-gpu.yml` | Development environment, and the SPANet training environment for a GPU node |
+| `data/`, `outputs/` | Local datasets and training runs, ignored by Git |
 
 ## Development setup
 
-Requires `micromamba`. Run all commands from the repository root.
-
-To start: create the Python 3.11 environment once.
+Requires `micromamba`. Run all commands from the repository root. Create the
+Python 3.11 environment once, then install the package in editable mode with its
+development tools:
 
 ```bash
 micromamba create -f environment.yml
-```
-
-Install the package in editable mode with its development tools:
-
-```bash
 micromamba run -n spanet-reco python -m pip install -e ".[dev]"
 ```
 
-Editable installation makes source changes available without reinstalling.
-Rerun the installation command after changing dependencies or package
-metadata. ROOT reading uses Uproot and HDF5 access uses h5py. The `dev` extra
-installs pytest, Ruff, and PyYAML for the configuration consistency tests.
-SPANet itself runs in its own environment, `external/SPANet/environment`.
+Rerun the installation after changing dependencies or package metadata. ROOT
+reading uses Uproot and HDF5 access uses h5py; the `dev` extra adds pytest,
+Ruff, and PyYAML. SPANet and PyTorch run in a separate environment: locally
+`external/SPANet/environment`, and on a GPU node the one from
+`environment-spanet-gpu.yml`. The training code runs there from this checkout,
+without installation.
 
-Commands below explicitly select the environment, so shell activation
-is unnecessary.
-
-### Verification
+Check the environment:
 
 ```bash
-micromamba run -n spanet-reco python --version
-micromamba run -n spanet-reco python -c "import spanet_reco; print(spanet_reco.__file__)"
 micromamba run -n spanet-reco python -m pip check
+micromamba run -n spanet-reco python -c "import spanet_reco; print(spanet_reco.__file__)"
 ```
-
-Expect Python `3.11.x`, an import path pointing to this checkout's
-`src/spanet_reco/__init__.py`, and no broken dependency requirements.
 
 ### Check code quality
 
@@ -84,41 +99,35 @@ micromamba run -n spanet-reco ruff check src tests scripts
 micromamba run -n spanet-reco ruff format --check src tests scripts
 ```
 
-Tests use small NumPy arrays and temporary synthetic ROOT/HDF5 files.
-They require no private MC files.
-
-To apply formatting:
+Tests use small synthetic ROOT and HDF5 files and need no private MC. The model
+checks need SPANet and are skipped unless `SPANET_PYTHON` names its Python:
 
 ```bash
-micromamba run -n spanet-reco ruff format src tests scripts
+SPANET_PYTHON=/isilon/export/home/jhuan166/Vcb/external/SPANet/environment/bin/python \
+  micromamba run -n spanet-reco python -m pytest tests -q
 ```
 
-Review the resulting changes with `git diff` before staging them.
+To apply formatting, run `micromamba run -n spanet-reco ruff format src tests scripts`
+and review the changes with `git diff`.
 
 ## Development fixture
 
-The [fixture guide](docs/development-fixture.md) describes the 100 signal
-and 100 background events recovered using training-event identities from
-`spanet-test`. It includes preparation commands and source provenance.
-Local data under `data/` are ignored by Git.
-
-Check the upstream assignments in a fixture:
+The [fixture guide](docs/development-fixture.md) describes 100 signal and 100
+background events recovered from the pilot study in `spanet-test`, stored under
+`data/fixtures/pilot-v1/`. Check their upstream assignments with:
 
 ```bash
 micromamba run -n spanet-reco python -m spanet_reco.root_io data/fixtures/pilot-v1/signal.root
-micromamba run -n spanet-reco python -m spanet_reco.root_io data/fixtures/pilot-v1/background.root
 ```
 
-Each command should report 100 events, 100 fully matched, and zero exclusions.
-These counts describe the upstream assignments before the extractor's jet cuts.
-The reader loads only `nJets` and the four assignment branches; fully matched
-training must check the final extracted target masks, as specified in the
-[target contract](docs/target-contract.md). This fixture is for development;
-it does not define the eventual training or evaluation datasets.
+Each file should report 100 events, all fully matched before the extractor's
+jet cuts. The fixture is for development only.
 
 ## Open decisions
 
-- The weight `alpha` of the optional mass chi-square loss (see
-  [SPANet configuration](docs/spanet-config.md#mass-chi-square-loss)), and the
-  checkpoint selection.
-- Evaluation on the test split, reported separately for each sample.
+- The weight `alpha` of the mass chi-square loss, and whether to select
+  checkpoints by per-sample full-assignment accuracy instead of SPANet's jet
+  accuracy.
+- Evaluation on the test split, reported separately for each sample, including
+  the fraction of events that are fully matched.
+- Event weights (none are used now).
