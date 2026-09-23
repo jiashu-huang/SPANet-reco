@@ -148,10 +148,13 @@ SPANET_PYTHON=/path/to/spanet-environment/bin/python \
   scripts/train.sh data/datasets/mc20260908-v1 outputs/run1 -g 1 -b 1024
 ```
 
-`scripts/train.sh` runs `spanet.train` with the event and options files,
-`train.h5`, and `validation.h5`. Options after the output directory override
-[`configs/options-vcb.json`](../configs/options-vcb.json): `-g 1` uses one GPU,
-`-b` sets the batch size, and `-e` the number of epochs (15 by default). The
+`scripts/train.sh` runs `python -m spanet_reco.train` with the event and
+options files, `train.h5`, and `validation.h5`. Options after the output
+directory override [`configs/options-vcb.json`](../configs/options-vcb.json):
+`-g 1` uses one GPU, `-b` sets the batch size, and `-e` the number of epochs
+(15 by default). `--alpha 0.5` adds the mass chi-square term to the loss, and
+`--seed N` fixes the initial weights; see
+[Mass chi-square loss](spanet-config.md#mass-chi-square-loss). The
 run directory receives `train.log`, the dataset's `summary.json`, the
 repository revision, and SPANet's `vcb/version_N/` with checkpoints,
 TensorBoard logs, and copies of the options and event files.
@@ -168,6 +171,16 @@ the setup.
 
 ## After training
 
-Evaluation on `test.h5` is not yet implemented here. SPANet's own
-`python -m spanet.test RUN/vcb/version_0 -tf test.h5` and
-`python -m spanet.predict` provide overall metrics and predicted assignments.
+[`scripts/compare_checkpoints.py`](../scripts/compare_checkpoints.py) compares
+runs on the same fully matched events of a built file (by default the first 10%
+of `validation.h5`): per-sample assignment accuracies and the masses of the
+chosen hadronic top and W jets, with the true jets and the minimum chi-square
+triplet for reference. Run it from the repository root in the SPANet environment:
+
+```bash
+PYTHONPATH=src python scripts/compare_checkpoints.py outputs/run1/vcb/version_0 outputs/run2/vcb/version_0
+```
+
+Evaluation on `test.h5`, including events that are not fully matched, is not
+yet implemented. SPANet's own `python -m spanet.test RUN/vcb/version_0 -tf test.h5`
+and `python -m spanet.predict` provide overall metrics and predicted assignments.

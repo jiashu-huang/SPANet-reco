@@ -2,9 +2,11 @@
 # Train SPANet on one GPU of Brown's Oscar cluster.
 #
 # Submit from the repository root, after `mkdir -p outputs`:
-#   sbatch scripts/slurm_oscar.sh [DATA_DIR] [OUTPUT_DIR] [spanet.train options...]
+#   sbatch scripts/slurm_oscar.sh [DATA_DIR] [OUTPUT_DIR] [options...]
 # Defaults: DATA_DIR=data/datasets/mc20260908-v1, OUTPUT_DIR=outputs/<job id>,
-# options "-g 1 -b 1024". Resources below follow the group's Oscar template and
+# options "-g 1 -b 1024". Options are those of scripts/train.sh: spanet.train
+# options plus --alpha (mass chi-square loss) and --seed, for example
+#   sbatch scripts/slurm_oscar.sh data/datasets/mc20260908-v1 outputs/a095-s1 -g 1 -b 1024 --alpha 0.95 --seed 1 Resources below follow the group's Oscar template and
 # can be overridden on the sbatch command line, for example --time=08:00:00 or
 # --mail-user=you@brown.edu for the end-of-job email.
 #

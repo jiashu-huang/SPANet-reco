@@ -118,5 +118,7 @@ it does not define the eventual training or evaluation datasets.
 
 ## Open decisions
 
-- Whether to keep SPANet's standard loss and checkpoint selection.
+- The weight `alpha` of the optional mass chi-square loss (see
+  [SPANet configuration](docs/spanet-config.md#mass-chi-square-loss)), and the
+  checkpoint selection.
 - Evaluation on the test split, reported separately for each sample.
