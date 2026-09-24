@@ -200,7 +200,7 @@ also works while a job runs.
 ## 9. Compare runs
 
 [`scripts/compare_checkpoints.py`](../scripts/compare_checkpoints.py) evaluates
-each run's best checkpoint on the same 206.6k validation events, per sample. It
+each run's best checkpoint on the same 20.6k validation events, the first 10% of `validation.h5`, per sample. It
 loads each run's training data, so run it as a CPU job rather than on the login
 node:
 
