@@ -82,6 +82,11 @@ Lightning 2.4) and SPANet at upstream commit `46c6805`. Training needs only
 SPANet, the configs, and the scripts; the `spanet_reco` package is not required
 on the cluster.
 
+The environment must exist before any job is submitted: a job started without it
+fails at once with `EnvironmentNameNotFound: Could not find conda environment:
+spanet-gpu` in its `.err` file. [Running on Oscar](oscar.md#2-one-time-setup)
+gives a faster `mamba` variant and the `-p` prefix it needs on Oscar.
+
 Then, from BRUX, copy the dataset and verify it on the cluster:
 
 ```bash

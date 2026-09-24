@@ -21,7 +21,9 @@ dependencies:
   - sympy
   - scikit-learn
   - pyyaml
-  - rich
+  # Rich 14 changed Console.clear_live, which Lightning 2.4's progress bar calls
+  # before any live display exists: IndexError: pop from empty list.
+  - rich<14
   - tensorboard
   - pytorch=2.3
   - pytorch-cuda=12.1

@@ -42,6 +42,26 @@ Creating the environment takes 10-30 minutes on a login node; if it is slow, add
 `--solver=libmamba`. The check prints `2.3.x 12.1`. The login node has no GPU;
 the job script checks the GPU when a job starts.
 
+Do not skip this step. A job submitted before the environment exists fails
+within seconds, and its `.err` file reads
+`EnvironmentNameNotFound: Could not find conda environment: spanet-gpu`.
+`ls ~/.conda/envs` shows whether `spanet-gpu` exists.
+
+A faster route is `mamba` from the `miniforge3` module, which built the
+environment in about 12 minutes. It must be told where to put the environment:
+without `-p`, it tries the read-only module tree and stops with
+`cannot create directories: Permission denied`.
+
+```bash
+module load miniforge3/25.3.0-3-a6hh
+mamba env create -y -p "$HOME/.conda/envs/spanet-gpu" -f environment-spanet-gpu.yml
+```
+
+Both modules look in `~/.conda/envs` first, so the job's `conda activate
+spanet-gpu` (through `anaconda3`) finds an environment created either way.
+Afterwards, in a new shell, run the `module load anaconda3` and `PY=...` lines
+above to check it.
+
 `PY` is the environment's Python. Sections 8 and 9 use it; in a new shell, set it
 again with the `module load` and `PY=...` lines above. The Slurm job activates
 the environment itself.
@@ -88,6 +108,16 @@ The job log `outputs/spanet-vcb-<jobid>.out` should show the PyTorch version, th
 GPU name with `check 8.0`, `Training on Full Events only.`, and
 `` `Trainer.fit` stopped: `max_epochs=1` reached. ``; `outputs/smoke/vcb/version_0/checkpoints/`
 should hold a checkpoint. Errors go to `outputs/spanet-vcb-<jobid>.err`.
+
+If the log instead ends with `IndexError: pop from empty list` raised in
+`rich_progress.py`, the environment has Rich 14 or newer, whose `clear_live`
+Lightning 2.4 cannot use. The environment file pins `rich<14`; fix an existing
+environment with
+
+```bash
+module load anaconda3/2023.09-0-aqbc
+conda install -n spanet-gpu --override-channels -c pytorch -c nvidia -c conda-forge --solver=libmamba "rich<14"
+```
 
 ## 6. Submit training
 
@@ -170,7 +200,7 @@ also works while a job runs.
 ## 9. Compare runs
 
 [`scripts/compare_checkpoints.py`](../scripts/compare_checkpoints.py) evaluates
-each run's best checkpoint on the same 20.6k validation events, per sample. It
+each run's best checkpoint on the same 206.6k validation events, per sample. It
 loads each run's training data, so run it as a CPU job rather than on the login
 node:
 
