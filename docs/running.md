@@ -113,7 +113,7 @@ sbatch scripts/slurm_oscar.sh
 in `l40s-gcondo`, 4 CPUs, 32 GB, and 5 hours, and emails at the end of the job.
 It activates `spanet-gpu`, checks that PyTorch can run on the allocated GPU,
 and trains on `data/datasets/mc20260908-v1` into `outputs/<job id>` with
-`-g 1 -b 1024`. Slurm writes `outputs/spanet-vcb-<job id>.out` and `.err`.
+`-g 1 -b 1024` plus any options given. Slurm writes `outputs/spanet-vcb-<job id>.out` and `.err`.
 Arguments select another dataset, output directory, or options, and sbatch
 options override the resources:
 
@@ -121,6 +121,39 @@ options override the resources:
 sbatch --time=12:00:00 --mail-user=you@brown.edu scripts/slurm_oscar.sh \
   data/datasets/mc20260908-v1 outputs/run2 -g 1 -b 2048 -e 20
 ```
+
+The command has three parts. Options before the script name go to Slurm; the
+two paths after it go to the job script; everything after the paths goes to the
+training program.
+
+| Part | Read by | Meaning |
+| --- | --- | --- |
+| `sbatch` | Slurm | Submits the job script to the queue and prints the job ID. |
+| `--time=12:00:00` | Slurm | Run time limit, hours:minutes:seconds, replacing the script's 5 hours. Slurm stops the job at the limit; see [Resume a run](oscar.md#10-resume-a-run-that-hit-the-time-limit). |
+| `--mail-user=you@brown.edu` | Slurm | Address for the email the script requests when the job ends. |
+| `scripts/slurm_oscar.sh` | Slurm | The job script: its `#SBATCH` lines request the resources; it activates `spanet-gpu`, checks the GPU, and runs `scripts/train.sh`. |
+| `data/datasets/mc20260908-v1` | job script | Dataset directory, relative to the repository root; `train.h5` trains and `validation.h5` validates. Default: this directory. |
+| `outputs/run2` | job script | Run directory for `train.log`, the dataset summary, the code revision, and SPANet's `vcb/version_N/` (checkpoints, TensorBoard events, copies of the configuration). Default: `outputs/<job id>`. |
+| `-g 1` | training | Number of GPUs; 0 trains on CPU. The job passes `-g 1` itself, so this is optional here. |
+| `-b 2048` | training | Batch size: events per optimizer step, replacing 128 from `options-vcb.json`. Larger batches mean fewer, faster steps per epoch; the learning rate is not rescaled. |
+| `-e 20` | training | Number of epochs, replacing 15 from `options-vcb.json`. |
+
+The job always passes `-g 1 -b 1024` before these options, so a later `-g` or
+`-b` replaces them, and a run with, say, only `--alpha 0.95` still uses the GPU.
+Other training options can follow the paths in any order:
+
+| Option | Meaning |
+| --- | --- |
+| `--alpha A` | Weight of SPANet's loss; the mass chi-square gets `1 - A` (default 1: plain SPANet). See [Mass chi-square loss](spanet-config.md#mass-chi-square-loss). |
+| `--top-mass`, `--top-width`, `--w-mass`, `--w-width` | Masses and widths of the chi-square in GeV (defaults 172.5, 20, 80.4, 15). |
+| `--seed N` | Seeds Python, NumPy, and PyTorch, so the initial weights and the data order repeat and runs can be compared. |
+| `-ef FILE` | Another SPANet event file, for a different feature set; see [Choosing training features](features.md). |
+| `-p P` | Trains on the first `P` percent of `train.h5`, for quick tests. |
+| `-cf CHECKPOINT` | Continues training from a checkpoint, such as `.../checkpoints/last.ckpt`. |
+| `-r N` | Shuffles the training rows with seed `N` before any `-p` subset; it does not seed the weights. |
+
+Slurm options such as `-J NAME` (job name), `--mem`, or `--partition` also go
+before the script name.
 
 L40S cards work with PyTorch 2.3. The Blackwell cards on other partitions
 (B200, RTX PRO 6000 Blackwell) need a newer PyTorch; the GPU check stops such a

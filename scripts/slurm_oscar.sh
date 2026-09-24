@@ -3,9 +3,10 @@
 #
 # Submit from the repository root, after `mkdir -p outputs`:
 #   sbatch scripts/slurm_oscar.sh [DATA_DIR] [OUTPUT_DIR] [options...]
-# Defaults: DATA_DIR=data/datasets/mc20260908-v1, OUTPUT_DIR=outputs/<job id>,
-# options "-g 1 -b 1024". Options are those of scripts/train.sh: spanet.train
-# options plus --alpha (mass chi-square loss) and --seed, for example
+# Defaults: DATA_DIR=data/datasets/mc20260908-v1, OUTPUT_DIR=outputs/<job id>.
+# The job always passes "-g 1 -b 1024" first; options given here follow and
+# override them. Options are those of scripts/train.sh: spanet.train options plus
+# --alpha (mass chi-square loss) and --seed, for example
 #   sbatch scripts/slurm_oscar.sh data/datasets/mc20260908-v1 outputs/a095-s1 \
 #     -g 1 -b 1024 --alpha 0.95 --seed 1
 # Resources below follow the group's Oscar template and can be overridden on the
@@ -34,8 +35,9 @@ cd "${SLURM_SUBMIT_DIR:-.}"
 data="${1:-data/datasets/mc20260908-v1}"
 output="${2:-outputs/${SLURM_JOB_ID:-local}}"
 shift $(( $# < 2 ? $# : 2 ))
-options=("$@")
-[ "${#options[@]}" -gt 0 ] || options=(-g 1 -b 1024)
+# One GPU and batch 1024 unless overridden: a later -g or -b replaces these, and
+# options such as --alpha alone still train on the GPU.
+options=(-g 1 -b 1024 "$@")
 
 # Module and conda activation scripts may read unset variables.
 set +u
